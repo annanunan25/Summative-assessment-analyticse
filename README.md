@@ -98,13 +98,13 @@ search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.
 
 solution = routing.SolveWithParameters(search_params)
 
-# ---------------------------
-# 7) Print the route
+---------------------------
+# 7) Extract route
 # ---------------------------
 if solution:
-    route_distance = 0
     index = routing.Start(0)
     route = []
+    route_distance = 0
     while not routing.IsEnd(index):
         node_index = manager.IndexToNode(index)
         route.append(node_index)
@@ -114,13 +114,31 @@ if solution:
     route.append(depot_index)  # return to depot
 
     print("Optimal VRP Route (indices):", route)
-    print("Coordinates in order:")
+    print("Route Coordinates:")
     for i in route:
         print(locations[i])
     print("Total Distance (meters):", route_distance)
     print("Total Distance (km):", route_distance / 1000)
+
+    # ---------------------------
+    # 8) Generate map with route
+    # ---------------------------
+    # Center map on depot
+    map_center = locations[0]
+    m = folium.Map(location=map_center, zoom_start=11)
+
+    # Add markers
+    for i, loc in enumerate(locations):
+        folium.Marker(loc, tooltip=f"Point {i}").add_to(m)
+
+    # Draw route
+    route_coords = [locations[i] for i in route]
+    folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(m)
+
+    # Save map
+    m.save("vrp_route_map.html")
+    print("Map saved as vrp_route_map.html. Open it in a browser to view the route.")
 else:
     print("No solution found!")
-        
 
     
