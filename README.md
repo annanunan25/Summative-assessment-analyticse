@@ -3,6 +3,7 @@ This is a repositiory used for my summative assessment analytics
 
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
 import math
+python3 -m pip install ortools
 
 # Locations (coordinates)
 locations = [
