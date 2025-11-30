@@ -36,21 +36,19 @@ def haversine(a, b):
         math.sin(dlat / 2)**2 +
         math.cos(lat1) * math.cos(lat2) *
 
-        
 # ---------------------------
-# 3) Create distance matrix
+# 3) Build distance matrix
 # ---------------------------
 n = len(locations)
-distance_matrix = [[0]*n for _ in range(n)]
-
-for i in range(n):
-    for j in range(n):
-        distance_matrix[i][j] = int(haversine(locations[i], locations[j])*1000)  # in meters
+distance_matrix = [[haversine(locations[i], locations[j]) for j in range(n)] for i in range(n)]
 
 # ---------------------------
-# 4) Create OR-Tools routing model
+# 4) Create VRP model
 # ---------------------------
-manager = pywrapcp.RoutingIndexManager(len(distance_matrix), 1, 0)  # 1 vehicle, depot=0
+num_vehicles = 1
+depot_index = 0
+
+manager = pywrapcp.RoutingIndexManager(len(distance_matrix), num_vehicles, depot_index)
 routing = pywrapcp.RoutingModel(manager)
 
 # Distance callback
@@ -62,42 +60,53 @@ def distance_callback(from_index, to_index):
 transit_callback_index = routing.RegisterTransitCallback(distance_callback)
 routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-# Solve parameters
-search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-search_parameters.first_solution_strategy = (
-    routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+# ---------------------------
+# 5) Optional: Set per-visit distance/time limit
+# ---------------------------
+# For example, 1 hour per stop at 60 km/h = 60 km
+max_leg_distance_meters = 60000
+def distance_dimension_callback(from_index, to_index):
+    return distance_matrix[manager.IndexToNode(from_index)][manager.IndexToNode(to_index)]
+
+routing.AddDimension(
+    transit_callback_index,
+    0,                      # no slack
+    max_leg_distance_meters, # maximum distance per vehicle
+    True,                   # start cumul to zero
+    "Distance"
 )
 
 # ---------------------------
-# 5) Solve
+# 6) Solve the VRP
 # ---------------------------
-solution = routing.SolveWithParameters(search_parameters)
+search_params = pywrapcp.DefaultRoutingSearchParameters()
+search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+
+solution = routing.SolveWithParameters(search_params)
 
 # ---------------------------
-# 6) Print best route
+# 7) Print the route
 # ---------------------------
 if solution:
+    route_distance = 0
     index = routing.Start(0)
     route = []
-    route_distance = 0
     while not routing.IsEnd(index):
         node_index = manager.IndexToNode(index)
         route.append(node_index)
         previous_index = index
         index = solution.Value(routing.NextVar(index))
         route_distance += routing.GetArcCostForVehicle(previous_index, index, 0)
-    route.append(0)  # return to depot
+    route.append(depot_index)  # return to depot
 
-    print("Fastest Route (by location index):", route)
-    print("Route Coordinates:")
+    print("Optimal VRP Route (indices):", route)
+    print("Coordinates in order:")
     for i in route:
         print(locations[i])
     print("Total Distance (meters):", route_distance)
-    print("Total Distance (km):", route_distance/1000)
+    print("Total Distance (km):", route_distance / 1000)
 else:
     print("No solution found!")
-        math.sin(dlon / 2)**2
-    )
+        
 
-    return 2 * R * math.asin(math.sqrt(h))
     
