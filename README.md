@@ -1,3 +1,16 @@
+# Step 0 : Install and import necessary libraries
+!pip install ortools openrouteservice ipyleaflet
+from ortools.constraint_solver import routing_enums_pb2
+from ortools.constraint_solver import pywrapcp
+import openrouteservice
+from ipyleaflet import Map, Polyline, Marker, Popup
+from ipywidgets import HTML
+from IPython.display import display
+import time
+import getpass
+import folium
+
+
 # Summative-assessment-analyticse
 This is a repositiory used for my summative assessment analytics
 
